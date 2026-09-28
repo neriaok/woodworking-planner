@@ -42,21 +42,40 @@
   background: transparent;
 }
 
+.photoRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .photo {
-  min-height: var(--touch);
+  position: relative;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1.5px dashed var(--border-strong);
+  border: 1.5px solid var(--accent);
   border-radius: 12px;
-  background: var(--surface-muted);
-  color: var(--text-secondary);
-  font-size: 14px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.photo:disabled {
-  cursor: default;
+.fileInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.or {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .templates {

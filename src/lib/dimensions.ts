@@ -1,7 +1,7 @@
-import type { SizeMm } from '../types/scene';
+import type { PhotoFace, SizeMm } from '../types/scene';
 import { roundToHalfCm } from './units';
 
-export type PhotoFace = 'front' | 'back' | 'left' | 'right' | 'top';
+export type { PhotoFace };
 export type DimKey = keyof SizeMm;
 
 /** What a photo of each face tells us: which two dimensions its width and height are. */

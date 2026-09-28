@@ -26,9 +26,27 @@ export interface Rotation {
 
 export type MaterialPresetId = 'pine' | 'oak' | 'whiteMdf' | 'plywood';
 
+/** Faces that can carry a photo, named as seen from in front of the piece. */
+export type PhotoFace = 'front' | 'back' | 'left' | 'right' | 'top';
+
+export type TextureMode = 'stretch' | 'tile';
+
+export interface PhotoMaterial {
+  type: 'photo';
+  /** Rectified image id per photographed face (images live outside Redux, see imageRegistry). */
+  faces: Partial<Record<PhotoFace, string>>;
+  /** Average colour of the photos, used on faces that were not photographed. */
+  baseColor: string;
+  /** stretch: the photo scales with the piece; tile: it repeats (wood grain on a lengthened board). */
+  textureMode: TextureMode;
+  /** Piece size when photographed — the reference for tiling. */
+  photoSizeMm: SizeMm;
+}
+
 export type Material =
   | { type: 'preset'; value: MaterialPresetId }
-  | { type: 'color'; value: string };
+  | { type: 'color'; value: string }
+  | PhotoMaterial;
 
 export type Motion =
   | { type: 'hinge'; side: 'left' | 'right' | 'top' | 'bottom'; maxAngleDeg: number }

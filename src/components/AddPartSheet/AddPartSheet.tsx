@@ -1,6 +1,6 @@
-import { useState, type FC, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FC, type FormEvent } from 'react';
 import clsx from 'clsx';
-import { IconCamera, IconX } from '@tabler/icons-react';
+import { IconCamera, IconPhoto, IconX } from '@tabler/icons-react';
 import type { MaterialPresetId, SizeMm } from '../../types/scene';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { addPiece } from '../../features/scene/sceneSlice';
@@ -36,14 +36,22 @@ const toText = (size: SizeMm): Record<DimKey, string> => ({
 
 interface AddPartSheetProps {
   onClose: () => void;
+  /** A photo was picked: the photo flow takes over. */
+  onPhoto: (file: File) => void;
 }
 
-const AddPartSheet: FC<AddPartSheetProps> = ({ onClose }) => {
+const AddPartSheet: FC<AddPartSheetProps> = ({ onClose, onPhoto }) => {
   const dispatch = useAppDispatch();
   const [name, setName] = useState(TEMPLATES[0].name);
   const [dims, setDims] = useState(toText(TEMPLATES[0].size));
   const [material, setMaterial] = useState<MaterialPresetId>(TEMPLATES[0].material);
   const [error, setError] = useState<string | null>(null);
+
+  const handleFile = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) onPhoto(file);
+  };
 
   const applyTemplate = (template: Template): void => {
     setName(template.name);
@@ -84,10 +92,19 @@ const AddPartSheet: FC<AddPartSheetProps> = ({ onClose }) => {
           </button>
         </div>
 
-        <button type="button" className={styles.photo} disabled>
-          <IconCamera size={20} />
-          מצילום — יגיע בשלב 2
-        </button>
+        <div className={styles.photoRow}>
+          <label className={styles.photo}>
+            <IconCamera size={20} />
+            צלם חלק
+            <input type="file" accept="image/*" capture="environment" className={styles.fileInput} onChange={handleFile} />
+          </label>
+          <label className={styles.photo}>
+            <IconPhoto size={20} />
+            מהגלריה
+            <input type="file" accept="image/*" className={styles.fileInput} onChange={handleFile} />
+          </label>
+        </div>
+        <p className={styles.or}>או הזן מידות ידנית</p>
 
         <div className={styles.templates}>
           {TEMPLATES.map((template) => (

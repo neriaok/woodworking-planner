@@ -10,12 +10,19 @@ import SceneSummary from '../SceneSummary';
 import SelectionPanel from '../SelectionPanel';
 import BottomToolbar from '../BottomToolbar';
 import AddPartSheet from '../AddPartSheet';
+import PhotoPartFlow from '../PhotoPartFlow';
 import styles from './App.module.css';
 
 const App: FC = () => {
   useKeyboardShortcuts();
   const selected = useAppSelector(selectSelectedNode);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  const handlePhoto = (file: File): void => {
+    setIsAddOpen(false);
+    setPhotoFile(file);
+  };
 
   return (
     <div className={styles.app} dir="rtl">
@@ -37,7 +44,8 @@ const App: FC = () => {
         {selected && <SelectionPanel node={selected} />}
         <BottomToolbar />
       </div>
-      {isAddOpen && <AddPartSheet onClose={() => setIsAddOpen(false)} />}
+      {isAddOpen && <AddPartSheet onClose={() => setIsAddOpen(false)} onPhoto={handlePhoto} />}
+      {photoFile && <PhotoPartFlow initialFile={photoFile} onClose={() => setPhotoFile(null)} />}
     </div>
   );
 };

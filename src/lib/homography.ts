@@ -128,7 +128,7 @@ export interface PixelBuffer {
   width: number;
   height: number;
   /** RGBA, 4 bytes per pixel. */
-  data: Uint8ClampedArray;
+  data: Uint8ClampedArray<ArrayBuffer>;
 }
 
 /**

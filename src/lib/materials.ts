@@ -19,11 +19,13 @@ export const isMaterialPresetId = (value: string): value is MaterialPresetId =>
 
 export const resolveMaterial = (material: Material): { color: string; roughness: number } => {
   if (material.type === 'color') return { color: material.value, roughness: 0.7 };
+  if (material.type === 'photo') return { color: material.baseColor, roughness: 0.75 };
   const preset = MATERIAL_PRESETS.find((p) => p.id === material.value) ?? MATERIAL_PRESETS[0];
   return { color: preset.color, roughness: preset.roughness };
 };
 
-export const materialLabel = (material: Material): string =>
-  material.type === 'color'
-    ? 'צבע מותאם'
-    : (MATERIAL_PRESETS.find((p) => p.id === material.value)?.label ?? '');
+export const materialLabel = (material: Material): string => {
+  if (material.type === 'color') return 'צבע מותאם';
+  if (material.type === 'photo') return 'תמונה';
+  return MATERIAL_PRESETS.find((p) => p.id === material.value)?.label ?? '';
+};

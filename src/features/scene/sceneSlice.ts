@@ -1,5 +1,5 @@
 import { createSlice, nanoid, original, type PayloadAction } from '@reduxjs/toolkit';
-import type { Axis, Box, Material, SceneNode, SizeMm, Vec3Mm } from '../../types/scene';
+import type { Axis, Box, Material, SceneNode, SizeMm, TextureMode, Vec3Mm } from '../../types/scene';
 import {
   boxMax,
   effectiveSize,
@@ -148,6 +148,13 @@ const sceneSlice = createSlice({
       node.material = action.payload.material;
     },
 
+    setTextureMode: (state, action: PayloadAction<{ id: string; mode: TextureMode }>) => {
+      const node = findNode(state, action.payload.id);
+      if (!node || node.material.type !== 'photo' || node.material.textureMode === action.payload.mode) return;
+      pushHistory(state);
+      node.material.textureMode = action.payload.mode;
+    },
+
     rotatePiece: (state, action: PayloadAction<{ id: string; axis: Axis }>) => {
       const node = findNode(state, action.payload.id);
       if (!node) return;
@@ -262,6 +269,7 @@ export const {
   removePiece,
   renamePiece,
   setMaterial,
+  setTextureMode,
   rotatePiece,
   setAxisLength,
   setElevation,

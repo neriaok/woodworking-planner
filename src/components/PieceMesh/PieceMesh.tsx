@@ -10,6 +10,7 @@ import { intersect, useCanvasDrag } from '../../hooks/useCanvasDrag';
 import { nodeBox, boxCenter } from '../../lib/geometry';
 import { resolveMaterial } from '../../lib/materials';
 import { snapMove } from '../../lib/snapping';
+import { usePhotoTextures } from './usePhotoTextures';
 import { mmToScene, sceneToMm } from '../../lib/units';
 import {
   checkpoint,
@@ -44,6 +45,9 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding }) => {
     return colliding ? base.lerp(COLLISION_COLOR, 0.6) : base;
   }, [node.material, colliding]);
   const { roughness } = resolveMaterial(node.material);
+  const textures = usePhotoTextures(node.material, node.sizeMm);
+  /** A photo is multiplied by this, so a collision tints it red instead of hiding it. */
+  const photoTint = colliding ? '#ff8a8a' : '#ffffff';
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>): void => {
     if (event.button !== 0) return; // right/middle mouse → camera pan
@@ -90,7 +94,16 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding }) => {
     >
       <mesh onPointerDown={handlePointerDown}>
         <boxGeometry args={[mmToScene(w), mmToScene(h), mmToScene(d)]} />
-        <meshStandardMaterial color={color} roughness={roughness} metalness={0} />
+        {textures.map((texture, index) => (
+          <meshStandardMaterial
+            key={`${index}-${texture ? texture.uuid : 'plain'}`}
+            attach={`material-${index}`}
+            map={texture}
+            color={texture ? photoTint : color}
+            roughness={roughness}
+            metalness={0}
+          />
+        ))}
         <Edges
           color={selected ? SELECTED_EDGE : EDGE}
           lineWidth={selected ? 3 : 1}

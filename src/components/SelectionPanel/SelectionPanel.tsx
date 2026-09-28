@@ -20,6 +20,7 @@ import {
   setAxisLength,
   setElevation,
   setMaterial,
+  setTextureMode,
 } from '../../features/scene/sceneSlice';
 import { selectPiece, toggleLockProportions } from '../../features/editor/editorSlice';
 import { effectiveSize } from '../../lib/geometry';
@@ -28,6 +29,8 @@ import NumberField from '../NumberField';
 import styles from './SelectionPanel.module.css';
 
 const CUSTOM_COLOR = 'custom';
+const PHOTO_STRETCH = 'photo-stretch';
+const PHOTO_TILE = 'photo-tile';
 
 const AXIS_FIELDS: readonly { axis: Axis; label: string }[] = [
   { axis: 'x', label: 'רוחב' },
@@ -48,9 +51,20 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
 
   useEffect(() => setName(node.name), [node.name, node.id]);
 
-  const materialValue = node.material.type === 'preset' ? node.material.value : CUSTOM_COLOR;
+  const materialValue =
+    node.material.type === 'preset'
+      ? node.material.value
+      : node.material.type === 'photo'
+        ? node.material.textureMode === 'tile'
+          ? PHOTO_TILE
+          : PHOTO_STRETCH
+        : CUSTOM_COLOR;
 
   const handleMaterialChange = (value: string): void => {
+    if (value === PHOTO_STRETCH || value === PHOTO_TILE) {
+      dispatch(setTextureMode({ id: node.id, mode: value === PHOTO_TILE ? 'tile' : 'stretch' }));
+      return;
+    }
     if (isMaterialPresetId(value)) {
       dispatch(setMaterial({ id: node.id, material: { type: 'preset', value } }));
     } else {
@@ -87,6 +101,12 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
             </option>
           ))}
           <option value={CUSTOM_COLOR}>צבע…</option>
+          {node.material.type === 'photo' && (
+            <optgroup label="תמונה">
+              <option value={PHOTO_STRETCH}>תמונה · נמתחת</option>
+              <option value={PHOTO_TILE}>תמונה · חוזרת</option>
+            </optgroup>
+          )}
         </select>
         {node.material.type === 'color' && (
           <input
