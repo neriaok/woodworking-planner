@@ -1,0 +1,12 @@
+.container {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.canvas {
+  touch-action: none;
+}

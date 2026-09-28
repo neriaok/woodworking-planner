@@ -1,0 +1,48 @@
+:root {
+  --bg: #f3f1ec;
+  --surface: #ffffff;
+  --surface-muted: #f7f5f0;
+  --border: rgba(40, 34, 24, 0.14);
+  --border-strong: rgba(40, 34, 24, 0.28);
+  --text: #23201a;
+  --text-secondary: #6b665c;
+  --accent: #1f6fd1;
+  --accent-soft: #e3eefb;
+  --accent-text: #0b4f9e;
+  --danger: #c23a39;
+  --danger-soft: #fbeaea;
+  --radius: 10px;
+  --touch: 44px;
+  --shadow: 0 6px 24px rgba(30, 25, 15, 0.12);
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans Hebrew', Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}

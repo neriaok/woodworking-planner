@@ -1,0 +1,115 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(6px + env(safe-area-inset-top)) 10px 6px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 5;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  height: var(--touch);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  padding: 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.name:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.iconButton {
+  width: var(--touch);
+  height: var(--touch);
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--surface-muted);
+}
+
+.iconButton:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.menuWrap {
+  position: relative;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 11;
+  min-width: 230px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: start;
+  font-size: 15px;
+}
+
+.menuItem:hover {
+  background: var(--surface-muted);
+}
+
+.check {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 5px;
+}
+
+.checkOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
+}

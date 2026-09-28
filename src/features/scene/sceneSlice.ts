@@ -74,11 +74,11 @@ const pushHistory = (state: SceneState): void => {
 const boxesExcept = (nodes: readonly SceneNode[], id: string | null): Box[] =>
   nodes.filter((n) => n.id !== id && !n.hidden).map(nodeBox);
 
-/** Place a new footprint to the right of everything, resting on the floor. */
-const placeBeside = (nodes: readonly SceneNode[], size: Vec3Mm): Vec3Mm => {
+/** Place a new piece on the floor in front of everything (towards the default camera). */
+const placeInFront = (nodes: readonly SceneNode[], size: Vec3Mm): Vec3Mm => {
   const bounds = unionBox(nodes.map(nodeBox));
   if (!bounds) return { x: -Math.round(size.x / 2), y: 0, z: -Math.round(size.z / 2) };
-  return { x: boxMax(bounds, 'x') + PLACEMENT_GAP_MM, y: 0, z: bounds.min.z };
+  return { x: bounds.min.x, y: 0, z: boxMax(bounds, 'z') + PLACEMENT_GAP_MM };
 };
 
 const findNode = (state: SceneState, id: string): SceneNode | undefined =>
@@ -100,7 +100,7 @@ const sceneSlice = createSlice({
         pushHistory(state);
         const { id, name, sizeMm, material } = action.payload;
         const size = effectiveSize(sizeMm, { x: 0, y: 0, z: 0 });
-        state.nodes.push(piece(id, name, sizeMm, placeBeside(state.nodes, size), material));
+        state.nodes.push(piece(id, name, sizeMm, placeInFront(state.nodes, size), material));
       },
       prepare: (input: Omit<AddPiecePayload, 'id'>) => ({ payload: { ...input, id: nanoid() } }),
     },
