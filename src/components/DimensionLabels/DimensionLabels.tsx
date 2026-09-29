@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { Html, Line } from '@react-three/drei';
-import type { SceneNode } from '../../types/scene';
-import { boxMax, nodeBox } from '../../lib/geometry';
+import type { Box } from '../../types/scene';
+import { boxMax } from '../../lib/geometry';
 import { formatCm, mmToScene } from '../../lib/units';
 import styles from './DimensionLabels.module.css';
 
@@ -32,11 +32,11 @@ const DimensionLine: FC<DimensionLineProps> = ({ from, to, label }) => {
 };
 
 interface DimensionLabelsProps {
-  node: SceneNode;
+  /** The box to measure: a piece, or the outline of a group. */
+  box: Box;
 }
 
-const DimensionLabels: FC<DimensionLabelsProps> = ({ node }) => {
-  const box = nodeBox(node);
+const DimensionLabels: FC<DimensionLabelsProps> = ({ box }) => {
   const x0 = mmToScene(box.min.x);
   const x1 = mmToScene(boxMax(box, 'x'));
   const y0 = mmToScene(box.min.y);

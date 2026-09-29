@@ -15,22 +15,26 @@ import { mmToScene, sceneToMm } from '../../lib/units';
 import {
   checkpoint,
   discardCheckpointIfUnchanged,
-  movePieceTransient,
+  moveNodesTransient,
 } from '../../features/scene/sceneSlice';
-import { selectPiece, setDragging } from '../../features/editor/editorSlice';
+import { selectPiece, setDragging, togglePicked } from '../../features/editor/editorSlice';
+import { memberPieces, otherBoxes, selectionForTap, targetBox, topLevelId } from '../../lib/sceneTree';
 
 const COLLISION_COLOR = new Color('#e24b4a');
 const SELECTED_EDGE = '#1f6fd1';
 const EDGE = '#6b665c';
+const PICKED_EDGE = '#d98a1c';
 const SNAP_THRESHOLD_MM = 40;
 
 interface PieceMeshProps {
   node: SceneNode;
   selected: boolean;
   colliding: boolean;
+  /** Chosen while picking pieces to group. */
+  picked: boolean;
 }
 
-const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding }) => {
+const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding, picked }) => {
   const dispatch = useAppDispatch();
   const store = useStore<RootState>();
   const { begin } = useCanvasDrag();
@@ -52,9 +56,19 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding }) => {
   const handlePointerDown = (event: ThreeEvent<PointerEvent>): void => {
     if (event.button !== 0) return; // right/middle mouse → camera pan
     event.stopPropagation();
-    dispatch(selectPiece(node.id));
+    const { scene: startScene, editor: startEditor } = store.getState();
 
-    const startBox = nodeBox(node);
+    if (startEditor.pickMode) {
+      dispatch(togglePicked(topLevelId(startScene.nodes, node.id)));
+      return;
+    }
+
+    const targetId = selectionForTap(startScene.nodes, node.id, startEditor.selectedId);
+    dispatch(selectPiece(targetId));
+
+    const startBox = targetBox(startScene.nodes, targetId);
+    if (!startBox) return;
+    const starts = memberPieces(startScene.nodes, targetId).map((m) => ({ id: m.id, pos: m.positionMm }));
     const plane = new Plane(new Vector3(0, 1, 0), -mmToScene(startBox.min.y));
     const hit = intersect(event.ray, plane);
     if (!hit) return;
@@ -70,14 +84,21 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding }) => {
         const point = intersect(ray, plane);
         if (!point) return;
         const { scene, editor } = store.getState();
-        const others = scene.nodes.filter((n) => n.id !== node.id && !n.hidden).map(nodeBox);
-        const positionMm = snapMove(
+        const others = otherBoxes(scene.nodes, targetId);
+        const min = snapMove(
           startBox,
           { x: sceneToMm(point.x - offsetX), z: sceneToMm(point.z - offsetZ) },
           others,
           { gridMm: editor.gridSnap ? 10 : null, thresholdMm: SNAP_THRESHOLD_MM },
         );
-        dispatch(movePieceTransient({ id: node.id, positionMm }));
+        const dx = min.x - startBox.min.x;
+        const dy = min.y - startBox.min.y;
+        const dz = min.z - startBox.min.z;
+        dispatch(
+          moveNodesTransient(
+            starts.map(({ id, pos }) => ({ id, positionMm: { x: pos.x + dx, y: pos.y + dy, z: pos.z + dz } })),
+          ),
+        );
       },
       onEnd: (moved) => {
         if (!moved) return;
@@ -105,8 +126,8 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding }) => {
           />
         ))}
         <Edges
-          color={selected ? SELECTED_EDGE : EDGE}
-          lineWidth={selected ? 3 : 1}
+          color={picked ? PICKED_EDGE : selected ? SELECTED_EDGE : EDGE}
+          lineWidth={selected || picked ? 3 : 1}
           threshold={15}
         />
       </mesh>

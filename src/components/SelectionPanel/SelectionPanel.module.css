@@ -114,3 +114,22 @@
   background: var(--accent-soft);
 }
 
+
+.groupRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.groupInfo {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.groupRow .rotateButton {
+  flex: none;
+  padding: 4px 14px;
+}

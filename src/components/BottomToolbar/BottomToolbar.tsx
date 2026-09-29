@@ -9,14 +9,14 @@ const TOOLS: readonly { tool: Tool; label: string; icon: ReactNode; comingIn?: s
   { tool: 'move', label: 'הזז', icon: <IconArrowsMove size={22} /> },
   { tool: 'rotate', label: 'סובב', icon: <IconRotateClockwise2 size={22} /> },
   { tool: 'resize', label: 'גודל', icon: <IconDimensions size={22} /> },
-  { tool: 'split', label: 'פרק', icon: <IconCut size={22} />, comingIn: 'פירוק לחלקים יגיע בשלב 4' },
+  { tool: 'split', label: 'פרק', icon: <IconCut size={22} /> },
 ];
 
 const HINTS: Record<Tool, string> = {
-  move: 'גרור חלק כדי להזיז אותו · גרור רקע לסיבוב המבט',
+  move: 'גרור חלק כדי להזיז אותו · הקשה נוספת על קבוצה בוחרת חלק בתוכה',
   rotate: 'בחר חלק ולחץ על כפתורי הסיבוב',
   resize: 'גרור את הנקודות הכחולות כדי להאריך או לקצר',
-  split: '',
+  split: 'חתוך חלק, פרק אותו לדפנות או חלק אותו לפי קווים',
 };
 
 const BottomToolbar: FC = () => {

@@ -41,6 +41,21 @@ export interface PhotoMaterial {
   textureMode: TextureMode;
   /** Piece size when photographed — the reference for tiling. */
   photoSizeMm: SizeMm;
+  /** For a piece cut out of a photographed one: which part of the original it is. */
+  crop?: Crop;
+}
+
+/**
+ * Sub-range of the originally photographed piece, as fractions (0–1) along its local
+ * width (x), height (y) and depth (z). Used to show the right part of the photo after a cut.
+ */
+export interface Crop {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  z0: number;
+  z1: number;
 }
 
 export type Material =

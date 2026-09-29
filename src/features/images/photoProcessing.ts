@@ -27,9 +27,37 @@ const canvasToBlob = (canvas: HTMLCanvasElement, type = 'image/jpeg', quality = 
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not encode image'))), type, quality);
   });
 
+type Decoded = { source: CanvasImageSource; width: number; height: number; release: () => void };
+
+/** Fallback for browsers without createImageBitmap options (older iOS): an <img> also applies EXIF rotation. */
+const decodeWithImage = (file: File): Promise<Decoded> =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () =>
+      resolve({ source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) });
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Unsupported image'));
+    };
+    img.src = url;
+  });
+
+const decode = async (file: File): Promise<Decoded> => {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      return { source: bitmap, width: bitmap.width, height: bitmap.height, release: () => bitmap.close() };
+    } catch {
+      // fall through to <img> decoding
+    }
+  }
+  return decodeWithImage(file);
+};
+
 /** Decode a camera/gallery file (respecting EXIF rotation) into a working canvas. */
 export const loadPhoto = async (file: File): Promise<LoadedPhoto> => {
-  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const bitmap = await decode(file);
   const scale = Math.min(1, WORKING_LONG_SIDE / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
   const height = Math.round(bitmap.height * scale);
@@ -38,8 +66,8 @@ export const loadPhoto = async (file: File): Promise<LoadedPhoto> => {
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas is not available');
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
+  ctx.drawImage(bitmap.source, 0, 0, width, height);
+  bitmap.release();
   const displayUrl = URL.createObjectURL(await canvasToBlob(canvas));
   return { canvas, width, height, displayUrl };
 };

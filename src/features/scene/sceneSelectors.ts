@@ -10,8 +10,9 @@ export const selectCanRedo = (state: RootState) => state.scene.future.length > 0
 export const selectSelectedNode = (state: RootState) =>
   state.scene.nodes.find((n) => n.id === state.editor.selectedId);
 
+/** Visible pieces (groups have no geometry of their own). */
 export const selectVisibleNodes = createSelector([selectNodes], (nodes) =>
-  nodes.filter((n) => !n.hidden),
+  nodes.filter((n) => n.type === 'piece' && !n.hidden),
 );
 
 export const selectCollidingIds = createSelector([selectVisibleNodes], (nodes) =>

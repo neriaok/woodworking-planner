@@ -11,11 +11,13 @@ import SelectionPanel from '../SelectionPanel';
 import BottomToolbar from '../BottomToolbar';
 import AddPartSheet from '../AddPartSheet';
 import PhotoPartFlow from '../PhotoPartFlow';
+import PickBanner from '../PickBanner';
 import styles from './App.module.css';
 
 const App: FC = () => {
   useKeyboardShortcuts();
   const selected = useAppSelector(selectSelectedNode);
+  const pickMode = useAppSelector((s) => s.editor.pickMode);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
@@ -41,7 +43,7 @@ const App: FC = () => {
         </button>
       </main>
       <div className={styles.bottom}>
-        {selected && <SelectionPanel node={selected} />}
+        {pickMode ? <PickBanner /> : selected && <SelectionPanel node={selected} />}
         <BottomToolbar />
       </div>
       {isAddOpen && <AddPartSheet onClose={() => setIsAddOpen(false)} onPhoto={handlePhoto} />}

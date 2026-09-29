@@ -1,0 +1,198 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(20, 16, 10, 0.45);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-radius: 18px 18px 0 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.iconButton {
+  width: var(--touch);
+  height: var(--touch);
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.stage {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 12px;
+  background: #1e1c19;
+}
+
+.frame {
+  position: relative;
+  max-width: 100%;
+  touch-action: none;
+  user-select: none;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.line {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+}
+
+.lineH {
+  left: -6px;
+  right: -6px;
+  height: 36px;
+  margin-top: -18px;
+  cursor: ns-resize;
+}
+
+.lineV {
+  top: -6px;
+  bottom: -6px;
+  width: 36px;
+  margin-left: -18px;
+  cursor: ew-resize;
+}
+
+.lineBar {
+  display: block;
+  background: #ffffff;
+  box-shadow: 0 0 0 1.5px #e24b4a;
+  border-radius: 2px;
+}
+
+.lineH .lineBar {
+  width: 100%;
+  height: 3px;
+}
+
+.lineV .lineBar {
+  width: 3px;
+  height: 100%;
+}
+
+.lineOn .lineBar {
+  background: #e24b4a;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.stepLabel {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.stepButton {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.stepValue {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.lineInfo {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.primary {
+  min-height: 50px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+}

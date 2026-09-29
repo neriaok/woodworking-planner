@@ -6,10 +6,12 @@ import {
   localSizeFromEffective,
   nodeBox,
   positionAfterRotation,
-  rotateQuarter,
+  rotateWorld,
   unionBox,
 } from '../../lib/geometry';
 import { resolveHeight, scaleProportional, MIN_SIZE_MM } from '../../lib/snapping';
+import { childrenOf, memberPieces, otherBoxes, piecesOf, targetBox } from '../../lib/sceneTree';
+import { rotateGroupMembers, type PieceDraft } from '../../lib/splitting';
 
 const HISTORY_LIMIT = 100;
 /** Gap (mm) left between the scene and a newly added or duplicated piece. */
@@ -71,18 +73,39 @@ const pushHistory = (state: SceneState): void => {
   state.future = [];
 };
 
-const boxesExcept = (nodes: readonly SceneNode[], id: string | null): Box[] =>
-  nodes.filter((n) => n.id !== id && !n.hidden).map(nodeBox);
-
 /** Place a new piece on the floor in front of everything (towards the default camera). */
 const placeInFront = (nodes: readonly SceneNode[], size: Vec3Mm): Vec3Mm => {
-  const bounds = unionBox(nodes.map(nodeBox));
+  const bounds = unionBox(piecesOf(nodes).map(nodeBox));
   if (!bounds) return { x: -Math.round(size.x / 2), y: 0, z: -Math.round(size.z / 2) };
   return { x: bounds.min.x, y: 0, z: boxMax(bounds, 'z') + PLACEMENT_GAP_MM };
 };
 
 const findNode = (state: SceneState, id: string): SceneNode | undefined =>
   state.nodes.find((n) => n.id === id);
+
+const groupNode = (id: string, name: string): SceneNode => ({
+  id,
+  name,
+  type: 'group',
+  parentId: null,
+  positionMm: { x: 0, y: 0, z: 0 },
+  rotation: { x: 0, y: 0, z: 0 },
+  sizeMm: { w: 0, h: 0, d: 0 },
+  material: { type: 'preset', value: 'pine' },
+});
+
+/** Groups with fewer than two pieces are dissolved. */
+const removeEmptyGroups = (state: SceneState): void => {
+  const groups = state.nodes.filter((n) => n.type === 'group');
+  groups.forEach((g) => {
+    const children = childrenOf(state.nodes, g.id);
+    if (children.length >= 2) return;
+    children.forEach((c) => {
+      c.parentId = null;
+    });
+    state.nodes = state.nodes.filter((n) => n.id !== g.id);
+  });
+};
 
 export interface AddPiecePayload {
   id: string;
@@ -105,33 +128,95 @@ const sceneSlice = createSlice({
       prepare: (input: Omit<AddPiecePayload, 'id'>) => ({ payload: { ...input, id: nanoid() } }),
     },
 
+    /** Duplicate a piece or a whole group, placed beside the original. */
     duplicatePiece: {
       reducer: (state, action: PayloadAction<{ id: string; newId: string }>) => {
         const source = findNode(state, action.payload.id);
-        if (!source) return;
+        const box = targetBox(state.nodes, action.payload.id);
+        if (!source || !box) return;
         pushHistory(state);
-        const box = nodeBox(source);
-        const moved: Box = {
-          min: { x: boxMax(box, 'x') + PLACEMENT_GAP_MM, y: box.min.y, z: box.min.z },
-          size: box.size,
-        };
-        const y = resolveHeight(moved, boxesExcept(state.nodes, null));
-        state.nodes.push({
-          ...source,
-          rotation: { ...source.rotation },
-          sizeMm: { ...source.sizeMm },
-          id: action.payload.newId,
-          name: `${source.name} (עותק)`,
-          positionMm: { ...moved.min, y },
+        const { newId } = action.payload;
+        const dx = boxMax(box, 'x') + PLACEMENT_GAP_MM - box.min.x;
+        const moved: Box = { min: { ...box.min, x: box.min.x + dx }, size: box.size };
+        const dy = resolveHeight(moved, otherBoxes(state.nodes, null)) - box.min.y;
+        const copy = (n: SceneNode, id: string, parentId: string | null): SceneNode => ({
+          ...n,
+          id,
+          parentId,
+          rotation: { ...n.rotation },
+          sizeMm: { ...n.sizeMm },
+          positionMm: { x: n.positionMm.x + dx, y: n.positionMm.y + dy, z: n.positionMm.z },
         });
+        if (source.type === 'group') {
+          state.nodes.push({ ...copy(source, newId, null), name: `${source.name} (עותק)` });
+          childrenOf(state.nodes, source.id).forEach((child) => {
+            state.nodes.push(copy(child, `${newId}:${child.id}`, newId));
+          });
+        } else {
+          state.nodes.push({ ...copy(source, newId, source.parentId), name: `${source.name} (עותק)` });
+        }
       },
       prepare: (id: string) => ({ payload: { id, newId: nanoid() } }),
     },
 
+    /** Delete a piece, or a group together with its pieces. Empty groups disappear. */
     removePiece: (state, action: PayloadAction<string>) => {
-      if (!findNode(state, action.payload)) return;
+      const node = findNode(state, action.payload);
+      if (!node) return;
       pushHistory(state);
-      state.nodes = state.nodes.filter((n) => n.id !== action.payload);
+      const id = action.payload;
+      state.nodes = state.nodes.filter((n) => n.id !== id && n.parentId !== id);
+      removeEmptyGroups(state);
+    },
+
+    /** Put pieces (and the pieces of any chosen groups) into one new group. */
+    groupNodes: {
+      reducer: (state, action: PayloadAction<{ ids: string[]; groupId: string; name: string }>) => {
+        const pieceIds = new Set(action.payload.ids.flatMap((id) => memberPieces(state.nodes, id).map((n) => n.id)));
+        if (pieceIds.size < 2) return;
+        pushHistory(state);
+        const { groupId, name } = action.payload;
+        state.nodes.push(groupNode(groupId, name));
+        state.nodes.forEach((n) => {
+          if (pieceIds.has(n.id)) n.parentId = groupId;
+        });
+        removeEmptyGroups(state);
+      },
+      prepare: (ids: string[], name: string) => ({ payload: { ids, name, groupId: nanoid() } }),
+    },
+
+    ungroup: (state, action: PayloadAction<string>) => {
+      const group = findNode(state, action.payload);
+      if (!group || group.type !== 'group') return;
+      pushHistory(state);
+      state.nodes.forEach((n) => {
+        if (n.parentId === group.id) n.parentId = null;
+      });
+      state.nodes = state.nodes.filter((n) => n.id !== group.id);
+    },
+
+    /**
+     * Replace a piece with the pieces it was split into. They stay in the piece's group,
+     * or form a new group named after it so they still move together.
+     */
+    replaceWithPieces: {
+      reducer: (state, action: PayloadAction<{ id: string; drafts: PieceDraft[]; ids: string[]; groupId: string }>) => {
+        const source = findNode(state, action.payload.id);
+        const { drafts, ids, groupId } = action.payload;
+        if (!source || source.type !== 'piece' || drafts.length === 0) return;
+        pushHistory(state);
+        let parentId = source.parentId;
+        if (!parentId) {
+          parentId = groupId;
+          state.nodes.push(groupNode(groupId, source.name));
+        }
+        const index = state.nodes.findIndex((n) => n.id === source.id);
+        const created = drafts.map((draft, i): SceneNode => ({ ...draft, id: ids[i], parentId }));
+        state.nodes.splice(index, 1, ...created);
+      },
+      prepare: (id: string, drafts: PieceDraft[]) => ({
+        payload: { id, drafts, ids: drafts.map(() => nanoid()), groupId: nanoid() },
+      }),
     },
 
     renamePiece: (state, action: PayloadAction<{ id: string; name: string }>) => {
@@ -158,9 +243,22 @@ const sceneSlice = createSlice({
     rotatePiece: (state, action: PayloadAction<{ id: string; axis: Axis }>) => {
       const node = findNode(state, action.payload.id);
       if (!node) return;
+      if (node.type === 'group') {
+        const box = targetBox(state.nodes, node.id);
+        if (!box || action.payload.axis !== 'y') return;
+        pushHistory(state);
+        const moves = rotateGroupMembers(childrenOf(state.nodes, node.id), box);
+        moves.forEach((m) => {
+          const child = findNode(state, m.id);
+          if (!child) return;
+          child.positionMm = m.positionMm;
+          child.rotation = m.rotation;
+        });
+        return;
+      }
       pushHistory(state);
       const before = nodeBox(node);
-      node.rotation = rotateQuarter(node.rotation, action.payload.axis);
+      node.rotation = rotateWorld(node.rotation, action.payload.axis);
       node.positionMm = positionAfterRotation(before, effectiveSize(node.sizeMm, node.rotation));
     },
 
@@ -220,6 +318,14 @@ const sceneSlice = createSlice({
       if (node) node.positionMm = action.payload.positionMm;
     },
 
+    /** Move several pieces at once (dragging a group). */
+    moveNodesTransient: (state, action: PayloadAction<{ id: string; positionMm: Vec3Mm }[]>) => {
+      action.payload.forEach(({ id, positionMm }) => {
+        const node = findNode(state, id);
+        if (node) node.positionMm = positionMm;
+      });
+    },
+
     setBoxTransient: (state, action: PayloadAction<{ id: string; box: Box }>) => {
       const node = findNode(state, action.payload.id);
       if (!node) return;
@@ -276,7 +382,11 @@ export const {
   checkpoint,
   discardCheckpointIfUnchanged,
   movePieceTransient,
+  moveNodesTransient,
   setBoxTransient,
+  groupNodes,
+  ungroup,
+  replaceWithPieces,
   newProject,
   loadDemo,
   renameProject,

@@ -1,0 +1,45 @@
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fdf1de;
+  border: 1px solid #efc98a;
+}
+
+.text {
+  margin: 0;
+  font-size: 14px;
+  color: #6b4106;
+  font-weight: 500;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+}
+
+.secondary,
+.primary {
+  min-height: var(--touch);
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.secondary {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.primary {
+  border: none;
+  background: #d98a1c;
+  color: #fff;
+  font-weight: 600;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+}

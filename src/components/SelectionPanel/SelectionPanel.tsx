@@ -7,6 +7,7 @@ import {
   IconLock,
   IconLockOpen,
   IconRotateClockwise2,
+  IconStack2,
   IconTrash,
   IconX,
 } from '@tabler/icons-react';
@@ -21,8 +22,13 @@ import {
   setElevation,
   setMaterial,
   setTextureMode,
+  ungroup,
 } from '../../features/scene/sceneSlice';
-import { selectPiece, toggleLockProportions } from '../../features/editor/editorSlice';
+import { selectNodes } from '../../features/scene/sceneSelectors';
+import { memberPieces, targetBox } from '../../lib/sceneTree';
+import { formatCm } from '../../lib/units';
+import SplitPanel from '../SplitPanel';
+import { selectPiece, startPicking, toggleLockProportions } from '../../features/editor/editorSlice';
 import { effectiveSize } from '../../lib/geometry';
 import { isMaterialPresetId, MATERIAL_PRESETS } from '../../lib/materials';
 import NumberField from '../NumberField';
@@ -48,6 +54,10 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
   const lockProportions = useAppSelector((s) => s.editor.lockProportions);
   const [name, setName] = useState(node.name);
   const size = effectiveSize(node.sizeMm, node.rotation);
+  const isGroup = node.type === 'group';
+  const nodes = useAppSelector(selectNodes);
+  const groupBox = isGroup ? targetBox(nodes, node.id) : null;
+  const memberCount = isGroup ? memberPieces(nodes, node.id).length : 0;
 
   useEffect(() => setName(node.name), [node.name, node.id]);
 
@@ -79,7 +89,7 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
   };
 
   return (
-    <section className={styles.panel} aria-label="חלק נבחר">
+    <section className={styles.panel} aria-label={isGroup ? "קבוצה נבחרת" : "חלק נבחר"}>
       <div className={styles.header}>
         <input
           className={styles.name}
@@ -89,6 +99,7 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           aria-label="שם החלק"
         />
+        {!isGroup && (
         <select
           className={styles.material}
           value={materialValue}
@@ -108,7 +119,8 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
             </optgroup>
           )}
         </select>
-        {node.material.type === 'color' && (
+        )}
+        {!isGroup && node.material.type === 'color' && (
           <input
             type="color"
             className={styles.color}
@@ -119,6 +131,15 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
             aria-label="בחר צבע"
           />
         )}
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={() => dispatch(startPicking(node.parentId ?? node.id))}
+          aria-label="קבץ עם חלקים אחרים"
+          title="קבץ עם חלקים אחרים"
+        >
+          <IconStack2 size={20} />
+        </button>
         <button type="button" className={styles.iconButton} onClick={() => dispatch(duplicatePiece(node.id))} aria-label="שכפל">
           <IconCopy size={20} />
         </button>
@@ -135,7 +156,27 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
         </button>
       </div>
 
-      {tool === 'rotate' ? (
+      {isGroup ? (
+        <div className={styles.groupRow}>
+          <span className={styles.groupInfo}>
+            {memberCount} חלקים · ר {groupBox ? formatCm(groupBox.size.x) : '–'} · ג{' '}
+            {groupBox ? formatCm(groupBox.size.y) : '–'} · ע {groupBox ? formatCm(groupBox.size.z) : '–'}
+          </span>
+          {tool === 'rotate' ? (
+            <button type="button" className={styles.rotateButton} onClick={() => dispatch(rotatePiece({ id: node.id, axis: 'y' }))}>
+              <IconRotateClockwise2 size={20} />
+              סובב 90°
+            </button>
+          ) : (
+            <button type="button" className={styles.rotateButton} onClick={() => dispatch(ungroup(node.id))}>
+              <IconStack2 size={20} />
+              פרק קבוצה
+            </button>
+          )}
+        </div>
+      ) : tool === 'split' ? (
+        <SplitPanel node={node} />
+      ) : tool === 'rotate' ? (
         <div className={styles.rotateRow}>
           <button type="button" className={styles.rotateButton} onClick={() => dispatch(rotatePiece({ id: node.id, axis: 'y' }))}>
             <IconRotateClockwise2 size={20} />

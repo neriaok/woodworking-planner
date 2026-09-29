@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Grid } from '@react-three/drei';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import {
+  selectNodes,
   selectCollidingIds,
   selectSceneBounds,
   selectSelectedNode,
@@ -16,6 +17,8 @@ import ResizeHandles from '../ResizeHandles';
 import DimensionLabels from '../DimensionLabels';
 import HumanFigure from '../HumanFigure';
 import CameraRig from './CameraRig';
+import CutPreview from './CutPreview';
+import { targetBox } from '../../lib/sceneTree';
 import styles from './Viewport.module.css';
 
 /** Gap (cm) between the reference person and the left edge of the build. */
@@ -27,7 +30,11 @@ const Viewport: FC = () => {
   const colliding = useAppSelector(selectCollidingIds);
   const selected = useAppSelector(selectSelectedNode);
   const bounds = useAppSelector(selectSceneBounds);
-  const { tool, showHuman, showDimensions } = useAppSelector((s) => s.editor);
+  const { tool, showHuman, showDimensions, pickMode } = useAppSelector((s) => s.editor);
+  const allNodes = useAppSelector(selectNodes);
+  const selectedBox = selected ? targetBox(allNodes, selected.id) : null;
+  const picked = new Set(pickMode?.picked ?? []);
+  const cutPreview = useAppSelector((s) => s.editor.cutPreview);
 
   const humanPosition: [number, number, number] = bounds
     ? [mmToScene(bounds.min.x) - HUMAN_GAP_CM, 0, mmToScene(boxCenter(bounds).z)]
@@ -64,13 +71,15 @@ const Viewport: FC = () => {
           <PieceMesh
             key={node.id}
             node={node}
-            selected={node.id === selected?.id}
+            selected={node.id === selected?.id || (!!node.parentId && node.parentId === selected?.id)}
             colliding={colliding.has(node.id)}
+            picked={picked.has(node.id) || (!!node.parentId && picked.has(node.parentId))}
           />
         ))}
 
-        {selected && tool === 'resize' && <ResizeHandles node={selected} />}
-        {selected && showDimensions && <DimensionLabels node={selected} />}
+        {selected?.type === 'piece' && tool === 'resize' && <ResizeHandles node={selected} />}
+        {selectedBox && showDimensions && <DimensionLabels box={selectedBox} />}
+        {cutPreview && <CutPreview />}
         {showHuman && <HumanFigure position={humanPosition} />}
 
         <CameraRig />

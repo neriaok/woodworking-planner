@@ -8,6 +8,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { intersect, useCanvasDrag } from '../../hooks/useCanvasDrag';
 import { boxCenter, boxMax, faceAxis, faceSign, nodeBox } from '../../lib/geometry';
 import { scaleProportional, snapResize } from '../../lib/snapping';
+import { otherBoxes } from '../../lib/sceneTree';
 import { mmToScene, sceneToMm } from '../../lib/units';
 import {
   checkpoint,
@@ -84,7 +85,7 @@ const Handle: FC<HandleProps> = ({ node, face }) => {
           const length = grid ? Math.round(rawLength / grid) * grid : rawLength;
           next = scaleProportional(startBox, face, length);
         } else {
-          const others = scene.nodes.filter((n) => n.id !== node.id && !n.hidden).map(nodeBox);
+          const others = otherBoxes(scene.nodes, node.id);
           next = snapResize(startBox, face, proposed, others, { gridMm: grid, thresholdMm: 40 });
         }
         dispatch(setBoxTransient({ id: node.id, box: next }));

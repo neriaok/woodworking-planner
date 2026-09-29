@@ -1,5 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { addPiece, duplicatePiece, newProject, removePiece } from '../scene/sceneSlice';
+import type { Axis } from '../../types/scene';
+import {
+  addPiece,
+  duplicatePiece,
+  groupNodes,
+  newProject,
+  removePiece,
+  replaceWithPieces,
+  ungroup,
+} from '../scene/sceneSlice';
 
 export type Tool = 'move' | 'rotate' | 'resize' | 'split';
 export type ViewMode = 'free' | 'front' | 'side' | 'top';
@@ -16,6 +25,10 @@ export interface EditorState {
   showDimensions: boolean;
   /** True while a piece or handle is being dragged (camera controls pause). */
   isDragging: boolean;
+  /** Picking pieces to group with the anchor: taps toggle pieces instead of selecting. */
+  pickMode: { anchorId: string; picked: string[] } | null;
+  /** Where a cut would go, shown as a plane in the scene while the split tool is open. */
+  cutPreview: { id: string; axis: Axis; offsetMm: number } | null;
 }
 
 const initialState: EditorState = {
@@ -28,6 +41,8 @@ const initialState: EditorState = {
   showHuman: true,
   showDimensions: true,
   isDragging: false,
+  pickMode: null,
+  cutPreview: null,
 };
 
 const editorSlice = createSlice({
@@ -59,6 +74,22 @@ const editorSlice = createSlice({
     setDragging: (state, action: PayloadAction<boolean>) => {
       state.isDragging = action.payload;
     },
+    startPicking: (state, action: PayloadAction<string>) => {
+      state.pickMode = { anchorId: action.payload, picked: [action.payload] };
+    },
+    togglePicked: (state, action: PayloadAction<string>) => {
+      if (!state.pickMode) return;
+      const { picked } = state.pickMode;
+      state.pickMode.picked = picked.includes(action.payload)
+        ? picked.filter((id) => id !== action.payload)
+        : [...picked, action.payload];
+    },
+    cancelPicking: (state) => {
+      state.pickMode = null;
+    },
+    setCutPreview: (state, action: PayloadAction<EditorState['cutPreview']>) => {
+      state.cutPreview = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -73,6 +104,18 @@ const editorSlice = createSlice({
       })
       .addCase(newProject, (state) => {
         state.selectedId = null;
+      })
+      .addCase(groupNodes, (state, action) => {
+        state.selectedId = action.payload.groupId;
+        state.pickMode = null;
+      })
+      .addCase(ungroup, (state) => {
+        state.selectedId = null;
+      })
+      .addCase(replaceWithPieces, (state, action) => {
+        // Select the first new piece; its group is one tap away.
+        state.selectedId = action.payload.ids[0] ?? null;
+        state.cutPreview = null;
       });
   },
 });
@@ -86,6 +129,10 @@ export const {
   toggleHuman,
   toggleDimensions,
   setDragging,
+  startPicking,
+  togglePicked,
+  cancelPicking,
+  setCutPreview,
 } = editorSlice.actions;
 
 export default editorSlice.reducer;
