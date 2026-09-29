@@ -1,5 +1,5 @@
 import { createSlice, nanoid, original, type PayloadAction } from '@reduxjs/toolkit';
-import type { Axis, Box, Material, SceneNode, SizeMm, TextureMode, Vec3Mm } from '../../types/scene';
+import type { Axis, Box, Material, Motion, SceneNode, SizeMm, TextureMode, Vec3Mm } from '../../types/scene';
 import {
   boxMax,
   effectiveSize,
@@ -301,6 +301,49 @@ const sceneSlice = createSlice({
       node.positionMm.y = y;
     },
 
+    /** Make a piece or group a door / drawer (or fixed again with null). */
+    setMotion: (state, action: PayloadAction<{ id: string; motion: Motion | null }>) => {
+      const node = findNode(state, action.payload.id);
+      if (!node) return;
+      pushHistory(state);
+      if (action.payload.motion) {
+        node.motion = action.payload.motion;
+      } else {
+        delete node.motion;
+        delete node.openAmount;
+      }
+    },
+
+    /** Open/close state is a viewing aid, so it is not recorded in undo history. */
+    setOpenAmount: (state, action: PayloadAction<{ id: string; amount: number }>) => {
+      const node = findNode(state, action.payload.id);
+      if (node?.motion) node.openAmount = Math.min(1, Math.max(0, action.payload.amount));
+    },
+
+    setAllOpen: (state, action: PayloadAction<number>) => {
+      state.nodes.forEach((n) => {
+        if (n.motion) n.openAmount = action.payload;
+      });
+    },
+
+    setHidden: (state, action: PayloadAction<{ id: string; hidden: boolean }>) => {
+      const node = findNode(state, action.payload.id);
+      if (!node) return;
+      pushHistory(state);
+      const ids = new Set(memberPieces(state.nodes, node.id).map((n) => n.id));
+      state.nodes.forEach((n) => {
+        if (ids.has(n.id)) n.hidden = action.payload.hidden;
+      });
+    },
+
+    showAllHidden: (state) => {
+      if (!state.nodes.some((n) => n.hidden)) return;
+      pushHistory(state);
+      state.nodes.forEach((n) => {
+        delete n.hidden;
+      });
+    },
+
     // --- Continuous gestures: checkpoint once, then apply transient updates. ---
 
     checkpoint: (state) => {
@@ -387,6 +430,11 @@ export const {
   groupNodes,
   ungroup,
   replaceWithPieces,
+  setMotion,
+  setOpenAmount,
+  setAllOpen,
+  setHidden,
+  showAllHidden,
   newProject,
   loadDemo,
   renameProject,

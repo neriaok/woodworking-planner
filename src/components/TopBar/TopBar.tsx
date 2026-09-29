@@ -7,8 +7,8 @@ import {
   IconDotsVertical,
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
-import { selectCanRedo, selectCanUndo } from '../../features/scene/sceneSelectors';
-import { loadDemo, newProject, redo, renameProject, undo } from '../../features/scene/sceneSlice';
+import { selectCanRedo, selectCanUndo, selectHiddenCount } from '../../features/scene/sceneSelectors';
+import { loadDemo, newProject, redo, renameProject, showAllHidden, undo } from '../../features/scene/sceneSlice';
 import {
   toggleDimensions,
   toggleGridSnap,
@@ -38,6 +38,7 @@ const TopBar: FC = () => {
   const canRedo = useAppSelector(selectCanRedo);
   const { gridSnap, showHuman, showDimensions } = useAppSelector((s) => s.editor);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const hiddenCount = useAppSelector(selectHiddenCount);
 
   const runAndClose = (action: () => void): void => {
     action();
@@ -88,6 +89,11 @@ const TopBar: FC = () => {
                 <MenuToggle label="הצמדה לרשת (1 ס״מ)" checked={gridSnap} onToggle={() => dispatch(toggleGridSnap())} />
                 <MenuToggle label="הצג מידות" checked={showDimensions} onToggle={() => dispatch(toggleDimensions())} />
                 <MenuToggle label="דמות אדם (175 ס״מ)" checked={showHuman} onToggle={() => dispatch(toggleHuman())} />
+                {hiddenCount > 0 && (
+                  <button type="button" className={styles.menuItem} onClick={() => runAndClose(() => dispatch(showAllHidden()))}>
+                    הצג חלקים מוסתרים ({hiddenCount})
+                  </button>
+                )}
                 <div className={styles.divider} />
                 <button type="button" className={styles.menuItem} onClick={() => runAndClose(() => dispatch(newProject()))}>
                   פרויקט חדש (ריק)

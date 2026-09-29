@@ -49,3 +49,14 @@ export const selectionForTap = (
 /** Top-level id for a piece: its group if it has one. */
 export const topLevelId = (nodes: readonly SceneNode[], pieceId: string): string =>
   nodes.find((n) => n.id === pieceId)?.parentId ?? pieceId;
+
+/** The node whose motion (door/drawer) moves this piece: itself, or its group. */
+export const motionOwnerOf = (nodes: readonly SceneNode[], piece: SceneNode): SceneNode | null => {
+  if (piece.motion) return piece;
+  const parent = piece.parentId ? nodes.find((n) => n.id === piece.parentId) : undefined;
+  return parent?.motion ? parent : null;
+};
+
+/** Orientation that defines front/left/top for a node (a group uses its first piece's). */
+export const orientationOf = (nodes: readonly SceneNode[], node: SceneNode): SceneNode['rotation'] =>
+  node.type === 'group' ? (childrenOf(nodes, node.id)[0]?.rotation ?? node.rotation) : node.rotation;

@@ -16,9 +16,17 @@ import {
   checkpoint,
   discardCheckpointIfUnchanged,
   moveNodesTransient,
+  setOpenAmount,
 } from '../../features/scene/sceneSlice';
 import { selectPiece, setDragging, togglePicked } from '../../features/editor/editorSlice';
-import { memberPieces, otherBoxes, selectionForTap, targetBox, topLevelId } from '../../lib/sceneTree';
+import {
+  memberPieces,
+  motionOwnerOf,
+  otherBoxes,
+  selectionForTap,
+  targetBox,
+  topLevelId,
+} from '../../lib/sceneTree';
 
 const COLLISION_COLOR = new Color('#e24b4a');
 const SELECTED_EDGE = '#1f6fd1';
@@ -32,9 +40,11 @@ interface PieceMeshProps {
   colliding: boolean;
   /** Chosen while picking pieces to group. */
   picked: boolean;
+  /** See-through (x-ray mode). */
+  ghost: boolean;
 }
 
-const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding, picked }) => {
+const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding, picked, ghost }) => {
   const dispatch = useAppDispatch();
   const store = useStore<RootState>();
   const { begin } = useCanvasDrag();
@@ -61,6 +71,15 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding, picked }) =>
     if (startEditor.pickMode) {
       dispatch(togglePicked(topLevelId(startScene.nodes, node.id)));
       return;
+    }
+
+    if (startEditor.tool === 'motion') {
+      const owner = motionOwnerOf(startScene.nodes, node);
+      if (owner) {
+        dispatch(selectPiece(owner.id));
+        dispatch(setOpenAmount({ id: owner.id, amount: (owner.openAmount ?? 0) > 0.5 ? 0 : 1 }));
+        return;
+      }
     }
 
     const targetId = selectionForTap(startScene.nodes, node.id, startEditor.selectedId);
@@ -117,12 +136,15 @@ const PieceMesh: FC<PieceMeshProps> = ({ node, selected, colliding, picked }) =>
         <boxGeometry args={[mmToScene(w), mmToScene(h), mmToScene(d)]} />
         {textures.map((texture, index) => (
           <meshStandardMaterial
-            key={`${index}-${texture ? texture.uuid : 'plain'}`}
+            key={`${index}-${texture ? texture.uuid : 'plain'}-${ghost ? 'ghost' : 'solid'}`}
             attach={`material-${index}`}
             map={texture}
             color={texture ? photoTint : color}
             roughness={roughness}
             metalness={0}
+            transparent={ghost}
+            opacity={ghost ? 0.18 : 1}
+            depthWrite={!ghost}
           />
         ))}
         <Edges

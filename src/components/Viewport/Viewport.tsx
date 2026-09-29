@@ -8,7 +8,10 @@ import {
   selectSceneBounds,
   selectSelectedNode,
   selectVisibleNodes,
+  selectMotionTargets,
 } from '../../features/scene/sceneSelectors';
+import type { SceneNode } from '../../types/scene';
+import MotionGroup from './MotionGroup';
 import { selectPiece } from '../../features/editor/editorSlice';
 import { boxCenter } from '../../lib/geometry';
 import { mmToScene } from '../../lib/units';
@@ -35,6 +38,22 @@ const Viewport: FC = () => {
   const selectedBox = selected ? targetBox(allNodes, selected.id) : null;
   const picked = new Set(pickMode?.picked ?? []);
   const cutPreview = useAppSelector((s) => s.editor.cutPreview);
+
+  const motionTargets = useAppSelector(selectMotionTargets);
+  const xray = useAppSelector((s) => s.editor.xray);
+  const movingIds = new Set(motionTargets.flatMap((t) => t.memberIds));
+  const blockedIds = new Set(motionTargets.filter((t) => t.blocked).flatMap((t) => t.memberIds));
+
+  const renderPiece = (node: SceneNode) => (
+    <PieceMesh
+      key={node.id}
+      node={node}
+      selected={node.id === selected?.id || (!!node.parentId && node.parentId === selected?.id)}
+      colliding={colliding.has(node.id) || blockedIds.has(node.id)}
+      picked={picked.has(node.id) || (!!node.parentId && picked.has(node.parentId))}
+      ghost={xray && !movingIds.has(node.id) && node.id !== selected?.id}
+    />
+  );
 
   const humanPosition: [number, number, number] = bounds
     ? [mmToScene(bounds.min.x) - HUMAN_GAP_CM, 0, mmToScene(boxCenter(bounds).z)]
@@ -67,15 +86,20 @@ const Viewport: FC = () => {
           position={[0, -0.02, 0]}
         />
 
-        {nodes.map((node) => (
-          <PieceMesh
-            key={node.id}
-            node={node}
-            selected={node.id === selected?.id || (!!node.parentId && node.parentId === selected?.id)}
-            colliding={colliding.has(node.id)}
-            picked={picked.has(node.id) || (!!node.parentId && picked.has(node.parentId))}
-          />
-        ))}
+        {nodes.filter((node) => !movingIds.has(node.id)).map(renderPiece)}
+        {motionTargets.map((target) =>
+          target.owner.motion ? (
+            <MotionGroup
+              key={target.owner.id}
+              box={target.box}
+              rotation={target.rotation}
+              motion={target.owner.motion}
+              amount={target.owner.openAmount ?? 0}
+            >
+              {nodes.filter((node) => target.memberIds.includes(node.id)).map(renderPiece)}
+            </MotionGroup>
+          ) : null,
+        )}
 
         {selected?.type === 'piece' && tool === 'resize' && <ResizeHandles node={selected} />}
         {selectedBox && showDimensions && <DimensionLabels box={selectedBox} />}

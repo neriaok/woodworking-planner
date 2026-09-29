@@ -1,6 +1,6 @@
 import { useEffect, useState, type FC, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { IconArrowsMove, IconCut, IconDimensions, IconRotateClockwise2 } from '@tabler/icons-react';
+import { IconArrowsMove, IconCut, IconDimensions, IconDoor, IconRotateClockwise2 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { setTool, type Tool } from '../../features/editor/editorSlice';
 import styles from './BottomToolbar.module.css';
@@ -10,6 +10,7 @@ const TOOLS: readonly { tool: Tool; label: string; icon: ReactNode; comingIn?: s
   { tool: 'rotate', label: 'סובב', icon: <IconRotateClockwise2 size={22} /> },
   { tool: 'resize', label: 'גודל', icon: <IconDimensions size={22} /> },
   { tool: 'split', label: 'פרק', icon: <IconCut size={22} /> },
+  { tool: 'motion', label: 'פתיחה', icon: <IconDoor size={22} /> },
 ];
 
 const HINTS: Record<Tool, string> = {
@@ -17,6 +18,7 @@ const HINTS: Record<Tool, string> = {
   rotate: 'בחר חלק ולחץ על כפתורי הסיבוב',
   resize: 'גרור את הנקודות הכחולות כדי להאריך או לקצר',
   split: 'חתוך חלק, פרק אותו לדפנות או חלק אותו לפי קווים',
+  motion: 'הגדר דלת או מגירה · הקשה על דלת או מגירה פותחת וסוגרת',
 };
 
 const BottomToolbar: FC = () => {

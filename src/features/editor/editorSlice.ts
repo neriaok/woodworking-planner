@@ -7,10 +7,11 @@ import {
   newProject,
   removePiece,
   replaceWithPieces,
+  setHidden,
   ungroup,
 } from '../scene/sceneSlice';
 
-export type Tool = 'move' | 'rotate' | 'resize' | 'split';
+export type Tool = 'move' | 'rotate' | 'resize' | 'split' | 'motion';
 export type ViewMode = 'free' | 'front' | 'side' | 'top';
 
 export interface EditorState {
@@ -29,6 +30,8 @@ export interface EditorState {
   pickMode: { anchorId: string; picked: string[] } | null;
   /** Where a cut would go, shown as a plane in the scene while the split tool is open. */
   cutPreview: { id: string; axis: Axis; offsetMm: number } | null;
+  /** See-through mode: fixed pieces turn translucent so doors, drawers and insides show. */
+  xray: boolean;
 }
 
 const initialState: EditorState = {
@@ -43,6 +46,7 @@ const initialState: EditorState = {
   isDragging: false,
   pickMode: null,
   cutPreview: null,
+  xray: false,
 };
 
 const editorSlice = createSlice({
@@ -87,6 +91,9 @@ const editorSlice = createSlice({
     cancelPicking: (state) => {
       state.pickMode = null;
     },
+    toggleXray: (state) => {
+      state.xray = !state.xray;
+    },
     setCutPreview: (state, action: PayloadAction<EditorState['cutPreview']>) => {
       state.cutPreview = action.payload;
     },
@@ -112,6 +119,9 @@ const editorSlice = createSlice({
       .addCase(ungroup, (state) => {
         state.selectedId = null;
       })
+      .addCase(setHidden, (state, action) => {
+        if (action.payload.hidden && state.selectedId === action.payload.id) state.selectedId = null;
+      })
       .addCase(replaceWithPieces, (state, action) => {
         // Select the first new piece; its group is one tap away.
         state.selectedId = action.payload.ids[0] ?? null;
@@ -133,6 +143,7 @@ export const {
   togglePicked,
   cancelPicking,
   setCutPreview,
+  toggleXray,
 } = editorSlice.actions;
 
 export default editorSlice.reducer;

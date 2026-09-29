@@ -12,6 +12,7 @@ import BottomToolbar from '../BottomToolbar';
 import AddPartSheet from '../AddPartSheet';
 import PhotoPartFlow from '../PhotoPartFlow';
 import PickBanner from '../PickBanner';
+import StageControls from '../StageControls';
 import styles from './App.module.css';
 
 const App: FC = () => {
@@ -33,6 +34,7 @@ const App: FC = () => {
         <Viewport />
         <ViewSwitcher />
         <SceneSummary />
+        <StageControls />
         <button
           type="button"
           className={styles.addButton}

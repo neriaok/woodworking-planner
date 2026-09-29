@@ -28,6 +28,7 @@ import { selectNodes } from '../../features/scene/sceneSelectors';
 import { memberPieces, targetBox } from '../../lib/sceneTree';
 import { formatCm } from '../../lib/units';
 import SplitPanel from '../SplitPanel';
+import MotionPanel from '../MotionPanel';
 import { selectPiece, startPicking, toggleLockProportions } from '../../features/editor/editorSlice';
 import { effectiveSize } from '../../lib/geometry';
 import { isMaterialPresetId, MATERIAL_PRESETS } from '../../lib/materials';
@@ -156,7 +157,9 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
         </button>
       </div>
 
-      {isGroup ? (
+      {tool === 'motion' ? (
+        <MotionPanel node={node} />
+      ) : isGroup ? (
         <div className={styles.groupRow}>
           <span className={styles.groupInfo}>
             {memberCount} חלקים · ר {groupBox ? formatCm(groupBox.size.x) : '–'} · ג{' '}
