@@ -133,3 +133,50 @@
   flex: none;
   padding: 4px 14px;
 }
+
+.moreWrap {
+  position: relative;
+}
+
+.moreBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.moreMenu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 11;
+  min-width: 210px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.moreItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 15px;
+  text-align: start;
+}
+
+.moreItem:hover {
+  background: var(--surface-muted);
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--accent-text);
+}

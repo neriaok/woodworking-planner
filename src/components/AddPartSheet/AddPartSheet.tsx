@@ -1,9 +1,14 @@
 import { useState, type ChangeEvent, type FC, type FormEvent } from 'react';
 import clsx from 'clsx';
-import { IconCamera, IconPhoto, IconX } from '@tabler/icons-react';
+import { IconCamera, IconPhoto, IconTrash, IconX } from '@tabler/icons-react';
 import type { MaterialPresetId, SizeMm } from '../../types/scene';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { addPiece } from '../../features/scene/sceneSlice';
+import { nanoid } from '@reduxjs/toolkit';
+import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
+import { removeLibraryItem } from '../../features/library/librarySlice';
+import { cloneNodes, type LibraryItem } from '../../lib/projectFile';
+import { nodeBox, unionBox } from '../../lib/geometry';
+import { piecesOf } from '../../lib/sceneTree';
+import { addPiece, insertNodes } from '../../features/scene/sceneSlice';
 import { MATERIAL_PRESETS } from '../../lib/materials';
 import { formatCm, parseCmToMm } from '../../lib/units';
 import styles from './AddPartSheet.module.css';
@@ -42,6 +47,7 @@ interface AddPartSheetProps {
 
 const AddPartSheet: FC<AddPartSheetProps> = ({ onClose, onPhoto }) => {
   const dispatch = useAppDispatch();
+  const library = useAppSelector((s) => s.library.items);
   const [name, setName] = useState(TEMPLATES[0].name);
   const [dims, setDims] = useState(toText(TEMPLATES[0].size));
   const [material, setMaterial] = useState<MaterialPresetId>(TEMPLATES[0].material);
@@ -51,6 +57,11 @@ const AddPartSheet: FC<AddPartSheetProps> = ({ onClose, onPhoto }) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (file) onPhoto(file);
+  };
+
+  const handleAddFromLibrary = (item: LibraryItem): void => {
+    dispatch(insertNodes(cloneNodes(item.nodes, nanoid, { x: 0, y: 0, z: 0 })));
+    onClose();
   };
 
   const applyTemplate = (template: Template): void => {
@@ -104,6 +115,37 @@ const AddPartSheet: FC<AddPartSheetProps> = ({ onClose, onPhoto }) => {
             <input type="file" accept="image/*" className={styles.fileInput} onChange={handleFile} />
           </label>
         </div>
+        {library.length > 0 && (
+          <div className={styles.library}>
+            <span className={styles.label}>מהמלאי שלך</span>
+            <ul className={styles.libraryList}>
+              {library.map((item) => {
+                const box = unionBox(piecesOf(item.nodes).map(nodeBox));
+                return (
+                  <li key={item.id} className={styles.libraryItem}>
+                    <button type="button" className={styles.libraryAdd} onClick={() => handleAddFromLibrary(item)}>
+                      <span className={styles.libraryName}>{item.name}</span>
+                      {box && (
+                        <span className={styles.libraryMeta}>
+                          {formatCm(box.size.x)} × {formatCm(box.size.y)} × {formatCm(box.size.z)} ס״מ
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.libraryRemove}
+                      onClick={() => dispatch(removeLibraryItem(item.id))}
+                      aria-label={`הסר את ${item.name} מהמלאי`}
+                    >
+                      <IconTrash size={18} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         <p className={styles.or}>או הזן מידות ידנית</p>
 
         <div className={styles.templates}>

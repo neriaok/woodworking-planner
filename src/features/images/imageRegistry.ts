@@ -23,3 +23,19 @@ export const registerImage = (blob: Blob, width: number, height: number): string
 export const getImage = (id: string): StoredImage | undefined => images.get(id);
 
 export const getImageUrl = (id: string): string | undefined => images.get(id)?.url;
+
+/** Put an image loaded from storage back under its original id. */
+export const restoreImage = (id: string, blob: Blob, width: number, height: number): void => {
+  if (images.has(id)) return;
+  images.set(id, { blob, url: URL.createObjectURL(blob), width, height });
+  persisted.add(id);
+};
+
+/** Ids already written to IndexedDB, so autosave does not rewrite large blobs. */
+const persisted = new Set<string>();
+
+export const isPersisted = (id: string): boolean => persisted.has(id);
+
+export const markPersisted = (id: string): void => {
+  persisted.add(id);
+};

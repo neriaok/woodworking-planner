@@ -18,6 +18,7 @@ const HISTORY_LIMIT = 100;
 const PLACEMENT_GAP_MM = 100;
 
 export interface SceneState {
+  projectId: string;
   projectName: string;
   nodes: SceneNode[];
   past: SceneNode[][];
@@ -58,6 +59,7 @@ export const createDemoNodes = (): SceneNode[] => [
 ];
 
 const initialState: SceneState = {
+  projectId: nanoid(),
   projectName: 'אי מטבח',
   nodes: createDemoNodes(),
   past: [],
@@ -378,9 +380,43 @@ const sceneSlice = createSlice({
 
     // --- Project & history ---
 
-    newProject: (state) => {
+    /** Start a fresh, empty project (the current one stays saved). */
+    newProject: {
+      reducer: (state, action: PayloadAction<{ id: string }>) => {
+        state.projectId = action.payload.id;
+        state.projectName = 'פרויקט חדש';
+        state.nodes = [];
+        state.past = [];
+        state.future = [];
+      },
+      prepare: () => ({ payload: { id: nanoid() } }),
+    },
+
+    /** Replace the open project with one loaded from storage. */
+    loadProject: (state, action: PayloadAction<{ id: string; name: string; nodes: SceneNode[] }>) => {
+      state.projectId = action.payload.id;
+      state.projectName = action.payload.name;
+      state.nodes = action.payload.nodes;
+      state.past = [];
+      state.future = [];
+    },
+
+    /** Add ready-made nodes (e.g. from the inventory), shifted to sit in front of the scene. */
+    insertNodes: (state, action: PayloadAction<SceneNode[]>) => {
+      const incoming = action.payload;
+      const box = unionBox(piecesOf(incoming).map(nodeBox));
+      if (!box) return;
       pushHistory(state);
-      state.nodes = [];
+      const target = placeInFront(state.nodes, box.size);
+      const dx = target.x - box.min.x;
+      const dz = target.z - box.min.z;
+      const dy = -box.min.y;
+      incoming.forEach((n) => {
+        state.nodes.push({
+          ...n,
+          positionMm: { x: n.positionMm.x + dx, y: n.positionMm.y + dy, z: n.positionMm.z + dz },
+        });
+      });
     },
 
     loadDemo: (state) => {
@@ -436,6 +472,8 @@ export const {
   setHidden,
   showAllHidden,
   newProject,
+  loadProject,
+  insertNodes,
   loadDemo,
   renameProject,
   undo,

@@ -8,6 +8,9 @@ import {
   IconLockOpen,
   IconRotateClockwise2,
   IconStack2,
+  IconDots,
+  IconArchive,
+  IconEyeOff,
   IconTrash,
   IconX,
 } from '@tabler/icons-react';
@@ -22,10 +25,14 @@ import {
   setElevation,
   setMaterial,
   setTextureMode,
+  setHidden,
   ungroup,
 } from '../../features/scene/sceneSlice';
+import { addLibraryItem } from '../../features/library/librarySlice';
+import { nanoid } from '@reduxjs/toolkit';
+import { cloneNodes } from '../../lib/projectFile';
 import { selectNodes } from '../../features/scene/sceneSelectors';
-import { memberPieces, targetBox } from '../../lib/sceneTree';
+import { childrenOf, memberPieces, targetBox } from '../../lib/sceneTree';
 import { formatCm } from '../../lib/units';
 import SplitPanel from '../SplitPanel';
 import MotionPanel from '../MotionPanel';
@@ -83,6 +90,30 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
     }
   };
 
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [savedNote, setSavedNote] = useState(false);
+
+  const runMore = (action: () => void): void => {
+    action();
+    setIsMoreOpen(false);
+  };
+
+  const handleSaveToLibrary = (): void => {
+    const members = node.type === 'group' ? [node, ...childrenOf(nodes, node.id)] : [{ ...node, parentId: null }];
+    const box = targetBox(nodes, node.id);
+    if (!box) return;
+    dispatch(
+      addLibraryItem({
+        id: nanoid(),
+        name: node.name,
+        createdAt: Date.now(),
+        nodes: cloneNodes(members, nanoid, { x: -box.min.x, y: -box.min.y, z: -box.min.z }),
+      }),
+    );
+    setSavedNote(true);
+    window.setTimeout(() => setSavedNote(false), 2000);
+  };
+
   const commitName = (): void => {
     const trimmed = name.trim();
     if (trimmed) dispatch(renamePiece({ id: node.id, name: trimmed }));
@@ -132,15 +163,36 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
             aria-label="בחר צבע"
           />
         )}
-        <button
-          type="button"
-          className={styles.iconButton}
-          onClick={() => dispatch(startPicking(node.parentId ?? node.id))}
-          aria-label="קבץ עם חלקים אחרים"
-          title="קבץ עם חלקים אחרים"
-        >
-          <IconStack2 size={20} />
-        </button>
+        <div className={styles.moreWrap}>
+          <button
+            type="button"
+            className={styles.iconButton}
+            onClick={() => setIsMoreOpen((v) => !v)}
+            aria-label="עוד פעולות"
+            aria-expanded={isMoreOpen}
+          >
+            <IconDots size={20} />
+          </button>
+          {isMoreOpen && (
+            <>
+              <div className={styles.moreBackdrop} onClick={() => setIsMoreOpen(false)} />
+              <div className={styles.moreMenu} role="menu">
+                <button type="button" className={styles.moreItem} onClick={() => runMore(() => dispatch(startPicking(node.parentId ?? node.id)))}>
+                  <IconStack2 size={18} />
+                  קבץ עם חלקים אחרים
+                </button>
+                <button type="button" className={styles.moreItem} onClick={() => runMore(handleSaveToLibrary)}>
+                  <IconArchive size={18} />
+                  שמור למלאי החלקים
+                </button>
+                <button type="button" className={styles.moreItem} onClick={() => runMore(() => dispatch(setHidden({ id: node.id, hidden: true })))}>
+                  <IconEyeOff size={18} />
+                  הסתר זמנית
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button type="button" className={styles.iconButton} onClick={() => dispatch(duplicatePiece(node.id))} aria-label="שכפל">
           <IconCopy size={20} />
         </button>
@@ -157,6 +209,7 @@ const SelectionPanel: FC<SelectionPanelProps> = ({ node }) => {
         </button>
       </div>
 
+      {savedNote && <p className={styles.note}>נשמר במלאי. אפשר להוסיף אותו לכל פרויקט דרך “+”.</p>}
       {tool === 'motion' ? (
         <MotionPanel node={node} />
       ) : isGroup ? (

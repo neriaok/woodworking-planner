@@ -2,6 +2,7 @@ import { useState, type FC } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { useAppSelector } from '../../hooks/useAppDispatch';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { usePersistence } from '../../hooks/usePersistence';
 import { selectSelectedNode } from '../../features/scene/sceneSelectors';
 import TopBar from '../TopBar';
 import Viewport from '../Viewport';
@@ -17,6 +18,7 @@ import styles from './App.module.css';
 
 const App: FC = () => {
   useKeyboardShortcuts();
+  usePersistence();
   const selected = useAppSelector(selectSelectedNode);
   const pickMode = useAppSelector((s) => s.editor.pickMode);
   const [isAddOpen, setIsAddOpen] = useState(false);

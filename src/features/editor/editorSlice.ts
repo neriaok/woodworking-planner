@@ -3,6 +3,8 @@ import type { Axis } from '../../types/scene';
 import {
   addPiece,
   duplicatePiece,
+  insertNodes,
+  loadProject,
   groupNodes,
   newProject,
   removePiece,
@@ -30,6 +32,8 @@ export interface EditorState {
   pickMode: { anchorId: string; picked: string[] } | null;
   /** Where a cut would go, shown as a plane in the scene while the split tool is open. */
   cutPreview: { id: string; axis: Axis; offsetMm: number } | null;
+  /** Autosave state, shown in the top bar. */
+  saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   /** See-through mode: fixed pieces turn translucent so doors, drawers and insides show. */
   xray: boolean;
 }
@@ -47,6 +51,7 @@ const initialState: EditorState = {
   pickMode: null,
   cutPreview: null,
   xray: false,
+  saveStatus: 'idle',
 };
 
 const editorSlice = createSlice({
@@ -91,6 +96,9 @@ const editorSlice = createSlice({
     cancelPicking: (state) => {
       state.pickMode = null;
     },
+    setSaveStatus: (state, action: PayloadAction<EditorState['saveStatus']>) => {
+      state.saveStatus = action.payload;
+    },
     toggleXray: (state) => {
       state.xray = !state.xray;
     },
@@ -111,6 +119,16 @@ const editorSlice = createSlice({
       })
       .addCase(newProject, (state) => {
         state.selectedId = null;
+      })
+      .addCase(loadProject, (state) => {
+        state.selectedId = null;
+        state.pickMode = null;
+        state.cutPreview = null;
+        state.viewRequest += 1;
+      })
+      .addCase(insertNodes, (state, action) => {
+        const first = action.payload.find((n) => n.type === 'group') ?? action.payload[0];
+        state.selectedId = first?.id ?? null;
       })
       .addCase(groupNodes, (state, action) => {
         state.selectedId = action.payload.groupId;
@@ -144,6 +162,7 @@ export const {
   cancelPicking,
   setCutPreview,
   toggleXray,
+  setSaveStatus,
 } = editorSlice.actions;
 
 export default editorSlice.reducer;

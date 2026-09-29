@@ -113,3 +113,14 @@
   margin: 4px 0;
   background: var(--border);
 }
+
+.status {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 34px;
+}
+
+.statusError {
+  color: var(--danger);
+}

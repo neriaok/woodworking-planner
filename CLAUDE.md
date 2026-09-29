@@ -14,7 +14,7 @@
 - Redux Toolkit + react-redux (typed hooks: `useAppDispatch`, `useAppSelector`)
 - CSS Modules + clsx
 - Vitest ללוגיקה טהורה
-- בהמשך: idb-keyval (IndexedDB), vite-plugin-pwa
+- idb-keyval (IndexedDB), vite-plugin-pwa
 
 ## קונבנציות קוד
 - קומפוננטות פונקציונליות `FC<Props>`, `interface <Name>Props` מעל הקומפוננטה, פירוק props בחתימה. default export.
@@ -165,3 +165,9 @@ interface Project { id: string; name: string; nodes: SceneNode[] }
   - כלי "פתיחה": קבוע/דלת/מגירה, צד ציר, זווית/שליפה, סליידר פתיחה, הסתרה זמנית. הקשה על דלת/מגירה בכלי הזה פותחת/סוגרת.
   - כפתורים צפים: "שקוף" (חלקים קבועים שקופים) ו"פתח/סגור הכול". בתפריט: "הצג חלקים מוסתרים".
   - בדיקת חסימה: דגימת מסלול הפתיחה מול חלקים אחרים (מתעלמת ממה שנוגע בסגור) → אדום + אזהרה.
+- [x] שלב 6 — שמירה, מלאי והתקנה (branch `feat/stage-6-save`)
+  - IndexedDB דרך idb-keyval (`features/storage/storage.ts`): פרויקטים, מלאי, ותמונות כ־Blob תחת אותו id של ה־registry.
+  - שמירה אוטומטית 700ms אחרי כל שינוי (`hooks/usePersistence.ts`); לא שומרים לפני שהטעינה הראשונית הסתיימה. סטטוס בסרגל העליון.
+  - "הפרויקטים שלי": פתיחה, מחיקה (אישור בתוך השורה), פרויקט חדש, ייצוא/ייבוא גיבוי JSON (כולל תמונות כ־data URL, מאומת ב־`parseBackup`).
+  - מלאי חלקים: "⋯ → שמור למלאי" (חלק או קבוצה, מנורמל לראשית), ובחלון "+" רשימת "מהמלאי שלך".
+  - PWA: vite-plugin-pwa, manifest בעברית/RTL, אייקונים ב־public, service worker עם autoUpdate.

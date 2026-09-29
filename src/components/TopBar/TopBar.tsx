@@ -8,13 +8,16 @@ import {
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { selectCanRedo, selectCanUndo, selectHiddenCount } from '../../features/scene/sceneSelectors';
-import { loadDemo, newProject, redo, renameProject, showAllHidden, undo } from '../../features/scene/sceneSlice';
+import { loadDemo, redo, renameProject, showAllHidden, undo } from '../../features/scene/sceneSlice';
+import ProjectsSheet from '../ProjectsSheet';
 import {
   toggleDimensions,
   toggleGridSnap,
   toggleHuman,
 } from '../../features/editor/editorSlice';
 import styles from './TopBar.module.css';
+
+const SAVE_LABELS = { idle: '', saving: 'שומר…', saved: 'נשמר', error: 'השמירה נכשלה' } as const;
 
 interface MenuToggleProps {
   label: string;
@@ -39,6 +42,8 @@ const TopBar: FC = () => {
   const { gridSnap, showHuman, showDimensions } = useAppSelector((s) => s.editor);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const hiddenCount = useAppSelector(selectHiddenCount);
+  const saveStatus = useAppSelector((s) => s.editor.saveStatus);
+  const [isProjectsOpen, setIsProjectsOpen] = useState(false);
 
   const runAndClose = (action: () => void): void => {
     action();
@@ -53,6 +58,9 @@ const TopBar: FC = () => {
         onChange={(e) => dispatch(renameProject(e.target.value))}
         aria-label="שם הפרויקט"
       />
+      <span className={clsx(styles.status, saveStatus === 'error' && styles.statusError)} aria-live="polite">
+        {SAVE_LABELS[saveStatus]}
+      </span>
       <div className={styles.actions}>
         <button
           type="button"
@@ -95,8 +103,8 @@ const TopBar: FC = () => {
                   </button>
                 )}
                 <div className={styles.divider} />
-                <button type="button" className={styles.menuItem} onClick={() => runAndClose(() => dispatch(newProject()))}>
-                  פרויקט חדש (ריק)
+                <button type="button" className={styles.menuItem} onClick={() => runAndClose(() => setIsProjectsOpen(true))}>
+                  הפרויקטים שלי · גיבוי
                 </button>
                 <button type="button" className={styles.menuItem} onClick={() => runAndClose(() => dispatch(loadDemo()))}>
                   טען דוגמה: אי מטבח
@@ -106,6 +114,7 @@ const TopBar: FC = () => {
           )}
         </div>
       </div>
+      {isProjectsOpen && <ProjectsSheet onClose={() => setIsProjectsOpen(false)} />}
     </header>
   );
 };

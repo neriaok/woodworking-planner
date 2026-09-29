@@ -7,7 +7,7 @@ Mobile-first 3D sketch planner for woodworking builds: photograph existing parts
 **Live:** https://woodworking-planner-gamma.vercel.app/ (Vercel, deploys every push to `main`; branches get preview URLs)
 
 ## Status
-Stages 1–4 are done (3D editor, photo → part, multi-face photos, groups and splitting). See [`CLAUDE.md`](./CLAUDE.md) for the full spec, decisions and roadmap.
+Stages 1–6 are done: 3D editor, photo → part (multi-face, A4 scale), groups and splitting, doors and drawers, autosave with projects/inventory/backup, installable PWA. See [`CLAUDE.md`](./CLAUDE.md) for the full spec, decisions and roadmap.
 
 ## Getting started
 ```bash
