@@ -121,6 +121,10 @@ interface Project { id: string; name: string; nodes: SceneNode[] }
 ### שלב 7 — שדרוגים
 - רשימת חלקים/חיתוכים, מלאי שנותר, צילום מסך, Express + MongoDB, AR (WebXR).
 
+## פריסה
+- Vercel: https://woodworking-planner-gamma.vercel.app/ — כל push ל־`main` מתפרס; לכל branch יש preview URL.
+- עבודה ב־branch לכל שלב, מיזוג ל־`main` אחרי שנריה בודק בטלפון.
+
 ## כללי עבודה
 - לוגיקה גיאומטרית = פונקציות טהורות ב־`src/lib` עם בדיקות Vitest.
 - בסוף כל שלב: `npm run typecheck && npm run test && npm run build` נקיים.
